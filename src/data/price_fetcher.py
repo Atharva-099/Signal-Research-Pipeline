@@ -39,8 +39,14 @@ class PriceFetcher(BaseFetcher):
         'LTC': 'litecoin',
     }
     
-    # Binance symbol formatting
-    BINANCE_BASE_URL = "https://api.binance.com"
+    # API URLs - multiple endpoints for fallback
+    BINANCE_URLS = [
+        "https://api.binance.com",
+        "https://api.binance.us",
+        "https://api1.binance.com",
+        "https://api2.binance.com",
+        "https://api3.binance.com",
+    ]
     COINGECKO_BASE_URL = "https://api.coingecko.com/api/v3"
     
     def __init__(self, config: Dict[str, Any] = None, source: str = None):
@@ -64,6 +70,9 @@ class PriceFetcher(BaseFetcher):
             f'{self.source}_calls_per_minute',
             30 if self.source == 'coingecko' else 1200
         )
+        
+        # Track working Binance URL
+        self.binance_url = None
         
         log.info(f"PriceFetcher initialized with source: {self.source}")
     
@@ -206,7 +215,7 @@ class PriceFetcher(BaseFetcher):
         end_date: datetime,
         interval: str = 'daily'
     ) -> pd.DataFrame:
-        """Fetch data from Binance API."""
+        """Fetch data from Binance API with multiple endpoint fallback."""
         all_data = []
         
         # Map interval
@@ -215,6 +224,23 @@ class PriceFetcher(BaseFetcher):
         
         quote = self.config.get('assets', {}).get('quote_currency', 'USDT')
         
+        # Find working Binance URL if not already cached
+        if self.binance_url is None:
+            for url in self.BINANCE_URLS:
+                try:
+                    test_resp = requests.get(f"{url}/api/v3/ping", timeout=5)
+                    if test_resp.status_code == 200:
+                        self.binance_url = url
+                        log.info(f"Using Binance endpoint: {url}")
+                        break
+                except:
+                    continue
+        
+        # If no Binance URL works, fall back to CoinGecko
+        if self.binance_url is None:
+            log.warning("All Binance endpoints failed, falling back to CoinGecko")
+            return self._fetch_coingecko(symbols, start_date, end_date)
+        
         for symbol in symbols:
             # Rate limit
             self._rate_limit(self.rate_limit_per_min)
@@ -222,7 +248,7 @@ class PriceFetcher(BaseFetcher):
             try:
                 pair = f"{symbol.upper()}{quote}"
                 
-                url = f"{self.BINANCE_BASE_URL}/api/v3/klines"
+                url = f"{self.binance_url}/api/v3/klines"
                 params = {
                     'symbol': pair,
                     'interval': kline_interval,
@@ -240,7 +266,6 @@ class PriceFetcher(BaseFetcher):
                     continue
                 
                 # Parse klines
-                # Format: [open_time, open, high, low, close, volume, close_time, ...]
                 df = pd.DataFrame(data, columns=[
                     'open_time', 'open', 'high', 'low', 'close', 'volume',
                     'close_time', 'quote_volume', 'trades', 'taker_buy_base',
@@ -261,6 +286,14 @@ class PriceFetcher(BaseFetcher):
                 
             except Exception as e:
                 log.error(f"Failed to fetch {symbol} from Binance: {e}")
+                # Try CoinGecko for this symbol
+                try:
+                    cg_data = self._fetch_coingecko([symbol], start_date, end_date)
+                    if len(cg_data) > 0:
+                        all_data.append(cg_data)
+                        log.info(f"Fetched {symbol} from CoinGecko fallback")
+                except:
+                    pass
                 continue
         
         if not all_data:
