@@ -1,0 +1,49 @@
+# Signal Research Pipeline - Dependencies
+# ========================================
+
+# Core
+pandas>=2.0.0
+numpy>=1.24.0
+scipy>=1.10.0
+
+# Data Sources
+requests>=2.28.0
+python-binance>=1.0.17
+pycoingecko>=3.1.0
+
+# Machine Learning
+scikit-learn>=1.2.0
+xgboost>=1.7.0
+shap>=0.41.0
+hmmlearn>=0.3.0
+
+# NLP / Sentiment
+transformers>=4.30.0
+torch>=2.0.0
+
+# Backtesting & Statistics
+statsmodels>=0.14.0
+arch>=5.3.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.14.0
+
+# Dashboard
+streamlit>=1.22.0
+
+# Utilities
+pyyaml>=6.0
+python-dotenv>=1.0.0
+loguru>=0.7.0
+tqdm>=4.65.0
+joblib>=1.2.0
+
+# Testing
+pytest>=7.3.0
+pytest-cov>=4.1.0
+
+# Jupyter (for notebooks)
+jupyter>=1.0.0
+ipykernel>=6.23.0

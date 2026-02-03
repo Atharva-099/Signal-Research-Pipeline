@@ -1,0 +1,173 @@
+# Signal Research Pipeline Configuration
+# ======================================
+
+project:
+  name: "Signal Research Pipeline"
+  version: "0.1.0"
+
+# Asset Universe
+assets:
+  symbols:
+    - BTC
+    - ETH
+    - SOL
+    - BNB
+    - XRP
+    - ADA
+    - AVAX
+    - DOT
+    - MATIC
+    - LINK
+  
+  # Quote currency for all pairs
+  quote_currency: USDT
+  
+  # Minimum data history required (days)
+  min_history_days: 365
+
+# Data Sources
+data:
+  # Primary price data source
+  price_source: "coingecko"  # Options: coingecko, binance
+  
+  # Cache settings
+  cache:
+    enabled: true
+    directory: "data/cache"
+    expiry_hours: 24
+  
+  # API rate limiting
+  rate_limit:
+    coingecko_calls_per_minute: 30
+    binance_calls_per_minute: 1200
+
+# Signal Configuration
+signals:
+  # Momentum signal
+  momentum:
+    lookback_periods: [5, 10, 20, 60]
+    default_lookback: 20
+  
+  # Mean reversion signal
+  mean_reversion:
+    lookback_period: 20
+    num_std: 2.0
+  
+  # Volatility signal
+  volatility:
+    lookback_period: 20
+    annualization_factor: 365
+  
+  # Sentiment signal
+  sentiment:
+    model: "ProsusAI/finbert"
+    max_news_per_asset: 10
+    lookback_days: 3
+  
+  # Funding rate signal
+  funding:
+    lookback_periods: [1, 7, 14]
+
+# Backtesting Configuration
+backtest:
+  # Train/test split
+  train_pct: 0.7
+  validation_pct: 0.15
+  test_pct: 0.15
+  
+  # Walk-forward settings
+  walk_forward:
+    window_size_days: 180
+    step_size_days: 30
+    min_train_days: 90
+  
+  # Cross-validation
+  cv:
+    n_splits: 5
+    embargo_pct: 0.01
+    purge_pct: 0.01
+  
+  # Transaction costs (in basis points)
+  transaction_cost_bps: 10
+  
+  # Position sizing
+  max_position_pct: 0.1
+
+# Validation Thresholds
+validation:
+  # Minimum IC to consider signal valid
+  min_ic: 0.02
+  min_ic_ir: 0.3
+  
+  # Minimum Sharpe ratio
+  min_sharpe: 0.5
+  
+  # Statistical significance
+  significance_level: 0.05
+  
+  # Bootstrap settings
+  bootstrap:
+    n_iterations: 1000
+    confidence_level: 0.95
+
+# Regime Detection
+regime:
+  # HMM settings
+  n_regimes: 3
+  features:
+    - returns
+    - volatility
+    - volume
+  
+  # Regime labels (for interpretation)
+  labels:
+    0: "low_vol"
+    1: "high_vol"
+    2: "trending"
+
+# Monitoring & Kill Criteria
+monitoring:
+  # Rolling window for decay tracking (days)
+  rolling_window: 30
+  
+  # Kill thresholds
+  kill_criteria:
+    min_rolling_ic: 0.01
+    min_rolling_sharpe: 0.3
+    max_drawdown: 0.25
+    consecutive_loss_days: 30
+  
+  # Health score weights
+  health_weights:
+    recent_ic: 0.4
+    stability: 0.2
+    regime_robustness: 0.2
+    decay_rate: 0.2
+
+# Ensemble Configuration
+ensemble:
+  # Blending methods
+  methods:
+    - equal_weight
+    - ic_weighted
+    - sharpe_weighted
+    - stacking
+  
+  # Stacking meta-model
+  stacking:
+    model: "ridge"
+    alpha: 1.0
+  
+  # Regime-adaptive weights
+  regime_adaptive: true
+
+# Dashboard
+dashboard:
+  port: 8501
+  refresh_interval_seconds: 60
+
+# Logging
+logging:
+  level: "INFO"
+  file: "logs/pipeline.log"
+  format: "{time} | {level} | {message}"
