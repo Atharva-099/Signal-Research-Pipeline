@@ -11,6 +11,8 @@ An ML-powered platform for cryptocurrency signal research, validation, and monit
 - **Ensemble Methods**: IC-weighted, stacking, regime-adaptive signal combination
 - **Monitoring**: Decay tracking, health scoring, kill criteria
 
+**Live URL**: https://signal-research-pipeline-a99.streamlit.app/
+
 ## Quick Start
 
 ### 1. Setup Environment
@@ -105,6 +107,3 @@ Edit `config/config.yaml` to customize:
 - **Binance**: OHLCV and funding rates
 - No API keys required for basic usage
 
-## License
-
-MIT
